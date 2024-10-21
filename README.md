@@ -1,7 +1,7 @@
 ## Description
-Stacking RIF service 
+Rootstock api's 
 
-API:  http://localhost:3000/api/strif/0x5DfDAF79c30282409F3b545C072e2397cb9F9F6B
+API:  http://localhost:3000/api/route/0x5DfDAF79c30282409F3b545C072e2397cb9F9F6B
 
 ## Architecture
 

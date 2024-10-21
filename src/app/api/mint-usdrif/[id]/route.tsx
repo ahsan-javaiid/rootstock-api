@@ -9,38 +9,6 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "Content-Type, Authorization",
 };
 
-const ROOTSTOCK_RPC_NODE = "https://public-node.rsk.co";
-//const ROOTSTOCK_RPC_NODE = "http: https://rpc.mainnet.rootstock.io/kXhXHf6TnnfW1POvr4UT0YUvujmuju-M";
-
-const rskProvider = new providers.JsonRpcProvider(ROOTSTOCK_RPC_NODE);
-
-
-// const stRif = '0xD6Eb12591559C42e28d672197265b331B1Ad867d'.toLowerCase();
-const stRif = '0x5db91e24bd32059584bbdb831a901f1199f3d459'.toLowerCase();
-
-const STRIFTokenContract = new Contract(stRif, abi, rskProvider);
-
-const balaneOfStRif = async (address: string) => {
-  const balance = await STRIFTokenContract.balanceOf(address.toLowerCase());
-  const formattedBalance = utils.formatUnits(balance, 18);
-  
-  return formattedBalance;
-}
-
-const totalSupply = async () => {
-  const balance = await STRIFTokenContract.totalSupply();
-  const formattedBalance = utils.formatUnits(balance, 18);
-  
-  return formattedBalance;
-}
-
-const getVotes = async (address: string) => {
-  const balance = await STRIFTokenContract.getVotes(address.toLowerCase());
-  const formattedBalance = utils.formatUnits(balance, 18);
-  
-  return formattedBalance;
-}
-
 let RIF_VALUE = 0.078623;
 let LAST_UPDATED: any = new Date();
 let isFirstTime = true;
@@ -102,9 +70,8 @@ const lookupBlockscoutIndexer = async (address: string, retry: number, next: any
     if (next && next.block_number) {
         q = `&block_numbeer=${next.block_number}&index=${next.index}`;
     }
-
-    const link = `https://rootstock.blockscout.com/api/v2/addresses/${address}/transactions?${q}`;
    
+    const link = `https://rootstock.blockscout.com/api/v2/addresses/${address}/token-transfers?type=ERC-20&filter=to&token=0x2aCc95758f8b5F583470bA265Eb685a8f45fC9D5`;
    
     console.log(link);
     const response = await fetch(link);
@@ -135,64 +102,8 @@ const lookupBlockscoutIndexer = async (address: string, retry: number, next: any
   }
 }
 
-const datesDiffInDays = (start: Date, end: Date) => {
-  const total = (end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24);
-  return  Math.round(total);
-}
 
-const getHoldingPeriod = async (address: string) => {
-  const retryCount = 10;
-  const data = await lookupBlockscoutIndexer(address, retryCount, '', []);
 
-  let holdingPeriodDays: any = [0];
-  let date: null | Date = null;
-
-  data.items.reverse().forEach((item: any) => {
-    if (item.to && item.to.hash && item.to.hash.toLowerCase() === stRif.toLowerCase()) {
-
-      if (item.method === 'depositAndDelegate') {
-        //console.log('depositAndDelegate', item.timestamp);
-        // save mint date
-        date = new Date(item.timestamp);
-      }
-  
-      if (item.method === 'withdrawTo') {
-        //console.log('withdrawTo', item.timestamp);
-        // 
-        const withdrawDate = new Date(item.timestamp);
-  
-        if (date) {
-          const days = datesDiffInDays(date, withdrawDate);
-  
-          holdingPeriodDays.push(days);
-        }
-  
-      }
-
-      if (item.method === 'transfer') {
-        // console.log('transfer', item.timestamp);
-        //
-        const transferDate = new Date(item.timestamp);
-  
-        if (date) {
-          const days = datesDiffInDays(date, transferDate);
-  
-          holdingPeriodDays.push(days);
-        }
-  
-      }
-    }
-
-  });
-
-  if (date && holdingPeriodDays.length === 1) {
-    const days = datesDiffInDays(date, new Date());
-  
-    holdingPeriodDays.push(days);
-  }
-
-  return Math.max(...holdingPeriodDays);
-}
 
 
 export const GET = async (req: any, context: any) => { 
@@ -203,24 +114,37 @@ export const GET = async (req: any, context: any) => {
       msg: 'Address is not valid!'
     }, { status: 200, headers: corsHeaders });
   }
+  const retryCount = 10;
 
-  const [balance, supply, votingPower, rifValue, holdingPeriodDays] = await Promise.all([
-    balaneOfStRif(params.id),
-    totalSupply(),
-    getVotes(params.id),
+  const [data, rifValue] = await Promise.all([
+    lookupBlockscoutIndexer(params.id, retryCount, '', []),
     rifToUSD(),
-    getHoldingPeriod(params.id)
   ]);
 
-  const stakingBalance = parseFloat(balance);
+  console.log(rifValue);
+ 
+  const responseData = {
+    mintedUSDRIF: false,
+    rifUsed: 0,
+    swapTimestamp: ''
+  }
+  data.items.reverse().forEach((tx) => {
+    if (tx.method === 'mintTP' && tx.to && tx.to.hash.toLowerCase() === '0xA27024eD70035E46DBa712609FC2AFA1c97aa36a'.toLowerCase()) {
+      if (tx.total) {
+        const value = utils.formatUnits(tx.total.value, tx.total.decimals);
+        if (Number(value) >= 100) {
+          responseData.mintedUSDRIF = true;
+          responseData.rifUsed = parseFloat(value);
+          responseData.swapTimestamp = tx.timestamp;
+        }
+      }
+    }
+  })
+
 
   return NextResponse.json({
     data: {
-      stackedBalance: stakingBalance,
-      holdingPeriodDays: stakingBalance === 0 ? 0: holdingPeriodDays,
-      stackedBalanceUSD: rifValue * parseFloat(balance),
-      totalSupply: parseFloat(supply),
-      votingPower: parseFloat(votingPower),
+      ...responseData,
       network: 'mainnet'
     }
   }, { status: 200, headers: corsHeaders });
