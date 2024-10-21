@@ -8,6 +8,21 @@ const corsHeaders = {
   "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
   "Access-Control-Allow-Headers": "Content-Type, Authorization",
 };
+const ROOTSTOCK_RPC_NODE = "https://public-node.rsk.co";
+
+const rskProvider = new providers.JsonRpcProvider(ROOTSTOCK_RPC_NODE);
+
+const stRif = '0x3A15461d8AE0f0Fb5fA2629e9dA7D66A794a6E37'.toLowerCase();
+
+const STRIFTokenContract = new Contract(stRif, abi, rskProvider);
+
+const balaneOfUSDRif = async (address: string) => {
+  const balance = await STRIFTokenContract.balanceOf(address.toLowerCase());
+  const formattedBalance = utils.formatUnits(balance, 18);
+  
+  return formattedBalance;
+}
+
 
 let RIF_VALUE = 0.078623;
 let LAST_UPDATED: any = new Date();
@@ -71,7 +86,7 @@ const lookupBlockscoutIndexer = async (address: string, retry: number, next: any
         q = `&block_numbeer=${next.block_number}&index=${next.index}`;
     }
    
-    const link = `https://rootstock.blockscout.com/api/v2/addresses/${address}/token-transfers?type=ERC-20&filter=to&token=0x2aCc95758f8b5F583470bA265Eb685a8f45fC9D5`;
+    const link = `https://rootstock.blockscout.com/api/v2/addresses/${address}/token-transfers?type=ERC-20&filter=to&token=0x2aCc95758f8b5F583470bA265Eb685a8f45fC9D5?${q}`;
    
     console.log(link);
     const response = await fetch(link);
@@ -116,9 +131,10 @@ export const GET = async (req: any, context: any) => {
   }
   const retryCount = 10;
 
-  const [data, rifValue] = await Promise.all([
+  const [data, rifValue, balance] = await Promise.all([
     lookupBlockscoutIndexer(params.id, retryCount, '', []),
     rifToUSD(),
+    balaneOfUSDRif(params.id)
   ]);
 
   console.log(rifValue);
@@ -126,7 +142,8 @@ export const GET = async (req: any, context: any) => {
   const responseData = {
     mintedUSDRIF: false,
     rifUsed: 0,
-    swapTimestamp: ''
+    swapTimestamp: '',
+    USDRIF_Balance: parseFloat( balance )
   }
   data.items.reverse().forEach((tx: any) => {
     if (tx.method === 'mintTP' && tx.to && tx.to.hash.toLowerCase() === '0xA27024eD70035E46DBa712609FC2AFA1c97aa36a'.toLowerCase()) {
@@ -145,7 +162,8 @@ export const GET = async (req: any, context: any) => {
   return NextResponse.json({
     data: {
       ...responseData,
-      network: 'mainnet'
+      network: 'mainnet',
+      site: 'rifonchain.com'
     }
   }, { status: 200, headers: corsHeaders });
 }
