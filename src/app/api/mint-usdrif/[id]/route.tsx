@@ -83,10 +83,10 @@ const lookupBlockscoutIndexer = async (address: string, retry: number, next: any
   try {
     let q = '';
     if (next && next.block_number) {
-        q = `&block_numbeer=${next.block_number}&index=${next.index}`;
+        q = `?block_numbeer=${next.block_number}&index=${next.index}&token=${next.token}`;
     }
    
-    const link = `https://rootstock.blockscout.com/api/v2/addresses/${address}/token-transfers?type=ERC-20&filter=to&token=0x2aCc95758f8b5F583470bA265Eb685a8f45fC9D5?${q}`;
+    const link = `https://rootstock.blockscout.com/api/v2/addresses/${address}/token-transfers?type=ERC-20&filter=to&token=0x2aCc95758f8b5F583470bA265Eb685a8f45fC9D5${q}`;
    
     console.log(link);
     const response = await fetch(link);
@@ -129,7 +129,7 @@ export const GET = async (req: any, context: any) => {
       msg: 'Address is not valid!'
     }, { status: 200, headers: corsHeaders });
   }
-  const retryCount = 10;
+  const retryCount = 30;
 
   const [data, rifValue, balance] = await Promise.all([
     lookupBlockscoutIndexer(params.id, retryCount, '', []),
