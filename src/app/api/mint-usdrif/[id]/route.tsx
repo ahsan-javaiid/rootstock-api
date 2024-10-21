@@ -128,7 +128,7 @@ export const GET = async (req: any, context: any) => {
     rifUsed: 0,
     swapTimestamp: ''
   }
-  data.items.reverse().forEach((tx) => {
+  data.items.reverse().forEach((tx: any) => {
     if (tx.method === 'mintTP' && tx.to && tx.to.hash.toLowerCase() === '0xA27024eD70035E46DBa712609FC2AFA1c97aa36a'.toLowerCase()) {
       if (tx.total) {
         const value = utils.formatUnits(tx.total.value, tx.total.decimals);
