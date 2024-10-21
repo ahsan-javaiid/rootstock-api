@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { providers, utils, Contract } from 'ethers';
 import cors from '../../../lib/cors';
 import { abi } from '../../../lib/abi';
+import { time } from "console";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -118,10 +119,38 @@ const lookupBlockscoutIndexer = async (address: string, retry: number, next: any
 }
 
 
+const isWithin = (timestamp: string, start: string, end: string | null | undefined) => {
+  const inputDate = new Date(timestamp);
+  const startDate = new Date(start);
 
+  startDate.setHours(0, 0, 0, 0);
+ 
+  if (!end) {
+    return inputDate >= startDate
+  }
+ 
+  const endDate = new Date(end);
+  endDate.setHours(23, 59, 59, 999);
+
+  // Check if the input date is within the range (inclusive)
+   return inputDate >= startDate && inputDate <= endDate;
+}
 
 
 export const GET = async (req: any, context: any) => { 
+  const searchParams = req.nextUrl.searchParams;
+  const startDate = searchParams.get('startDate');
+  const endDate = searchParams.get('endDate');
+
+  console.log('dates', startDate, endDate);
+
+  if (!startDate) {
+    return NextResponse.json({
+      msg: 'Start date is required!'
+    }, { status: 200, headers: corsHeaders });
+  }
+
+
   const { params } = context;
 
   if(!isValidAddress(params.id)) {
@@ -153,7 +182,9 @@ export const GET = async (req: any, context: any) => {
   let timestamps: any = [];
   data.items.reverse().forEach((tx: any) => {
     if (tx.method === 'mintTP' && tx.to && tx.to.hash.toLowerCase() === '0xA27024eD70035E46DBa712609FC2AFA1c97aa36a'.toLowerCase()) {
-      if (tx.total) {
+     
+      const isDateValid = isWithin(tx.timestamp, startDate, endDate);
+      if (isDateValid && tx.total) {
         const value = utils.formatUnits(tx.total.value, tx.total.decimals);
         acc = acc + parseFloat(value);
         responseData.rifUsed = responseData.rifUsed +  parseFloat(value);
@@ -179,8 +210,6 @@ export const GET = async (req: any, context: any) => {
   } else {
     // length 0, do nothing
   }
-
-
 
   return NextResponse.json({
     data: {
