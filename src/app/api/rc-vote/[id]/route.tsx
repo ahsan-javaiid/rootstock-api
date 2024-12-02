@@ -87,12 +87,12 @@ export const GET = async (req: any, context: any) => {
 
   const encodedList = await fetchProposals(govAddress);
 
-  const decodedList = await Promise.all(encodedList.map(async (encoded) => {
+  const decodedList = await Promise.all(encodedList.map(async (encoded: any) => {
 
     const decoded = interfaceDAO.decodeEventLog(
       'ProposalCreated',
       encoded.data,
-      encoded.topics.filter(a => a)
+      encoded.topics.filter((a: string) => a)
     );
 
     const hasVoted = await govContract.hasVoted(
