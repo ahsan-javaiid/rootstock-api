@@ -188,7 +188,9 @@ export const GET = async (req: any, context: any) => {
         acc = acc + parseFloat(value);
         responseData.rifUsed = responseData.rifUsed +  parseFloat(value);
 
-        if (acc >= 100) {
+        const threshold = rifValue * acc; 
+
+        if (threshold >= 10) { // 10 USDRIF
           responseData.mintedUSDRIF = true;
         }
 
