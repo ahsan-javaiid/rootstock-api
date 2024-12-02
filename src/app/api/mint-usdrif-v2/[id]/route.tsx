@@ -2,7 +2,6 @@ import { NextResponse } from "next/server";
 import { providers, utils, Contract } from 'ethers';
 import cors from '../../../lib/cors';
 import { abi } from '../../../lib/abi';
-import { time } from "console";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
