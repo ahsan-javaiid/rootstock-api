@@ -30,6 +30,15 @@ yarn-error.log*
 
 # vercel
 .vercel
+fee.js
+mainnet.js
+metmask.html
+nonce.js
+nonce.sh
+notes.txt
+rif.js
+script.js
+websocket.js
 
 # typescript
 *.tsbuildinfo
