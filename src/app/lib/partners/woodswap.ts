@@ -15,7 +15,14 @@ export const woodswap = [{
   name: '',
   method: 'swapAmount',
   txType: 'swap',
+},
+{
+  contract: '0xFE75d38b6ef8d1649b7d69A4a044e443C6aFe1CE',
+  name: '',
+  method: '0xe8ad375e',
+  txType: 'swap',
 }
+
 ]
 
 export const woodTokens = [

@@ -76,7 +76,7 @@ const findSwap = async (address: string, partner: string, txType: string, baseUr
     matchedTx: ''
   };
 
-  let maxPagesTocheck = 3;
+  let maxPagesTocheck = 4;
   let q = '';
 
   do {
@@ -214,7 +214,11 @@ const findSwap = async (address: string, partner: string, txType: string, baseUr
 
                   const tokenAddress = transfer.token.address.toLowerCase();
 
-                  const isTokenMatched = tokenMap[partner].includes(tokenAddress);
+                  let isTokenMatched = tokenMap[partner].includes(tokenAddress);
+
+                  if (txType === 'lend') {
+                    isTokenMatched = true; // ignore token matching for lend for testing
+                  }
 
                   if (inUSD >= 50 && isTokenMatched) { // $50
 
