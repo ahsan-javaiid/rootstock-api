@@ -1,0 +1,33 @@
+swap transactions: 
+0x22e96724e3d6d430a33acd8a1cbbde5f0f71c05be852d18c82db5fe94e766fe8
+0x1974b03b38e948287befd0c1a6eb7a3d8b6252519bc8e7fe00706c93711318a6
+0xFeb8bac57Bc7c3DCCE15b075e8D73B6D67Dac9b9
+
+
+Woodswap pools checked: for both lending and swap 
+- WRBTC/rUSDT 0.05% done 
+- WRBTC/rUSDT 1.00% done 
+- RIF/WRBTC 0.30% done 
+- RIF/rUSDT 0.30% done
+- WRBTC/rUSDT 0.30% done 
+- ETHs/WRBTC 0.30% done 
+
+
+
+
+
+
+
+Edge cases
+
+exchange rate not returned in case of ETHS
+        "partner": "woodswap",
+        "isVerified": true,
+        "txType": "lend",
+        "tokenName": "ETHs",
+        "tokenValue": 16.726394729756414,
+        "tokenValueUSD": 16.726394729756414,
+        "exchangeRate": 1,
+        "matchedTx": "0x975adc404df8d01658d9e4ab96fbfd68d5937462eac6e2a1307ff3fde5b2828d"
+
+https://api.coingecko.com/api/v3/simple/price?ids=ethereum&vs_currencies=USD

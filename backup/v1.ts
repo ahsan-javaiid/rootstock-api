@@ -3,7 +3,7 @@ import cors from '../../../../../lib/cors';
 import { oku, okuTokens } from "@/app/lib/partners/oku";
 import { sushi, sushiTokens } from "@/app/lib/partners/sushi";
 import { woodswap, woodTokens } from "@/app/lib/partners/woodswap";
-import { isWithin, isAmountValid, isDateValid, getExchangeRate } from "@/app/lib/utils";
+import { isWithin, isAmountValid, isDateValid } from "@/app/lib/utils";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -52,19 +52,20 @@ function getTxUrl(address: string, q: string, baseUrlType: string) {
   return txTokenTransferUrl;
 }
 
+// const lendMethods = ['mint', 'addLiquidity', 'addLiquidityETH', 'collect', 'supply', 'borrow', 'multicall'];
 const contractMap: any = {
   oku: oku,
   sushi: sushi,
   woodswap: woodswap,
 };
 const tokenMap: any = {
-  oku: okuTokens.map(e => e.toLowerCase()),
-  sushi: sushiTokens.map(e => e.toLowerCase()),
-  woodswap: woodTokens.map(e => e.toLowerCase()),
+  oku: okuTokens.map( e => e.toLowerCase()),
+  sushi: sushiTokens.map( e => e.toLowerCase()),
+  woodswap: woodTokens.map( e => e.toLowerCase()),
 };
 
 const findSwap = async (address: string, partner: string, txType: string, baseUrlType: string, amount: number, start: string, end: string | null | undefined) => {
-
+ 
   const ret = {
     partner: partner,
     isVerified: false,
@@ -79,12 +80,10 @@ const findSwap = async (address: string, partner: string, txType: string, baseUr
   let maxPagesTocheck = 10;
   let q = '';
 
-  const contractsList = contractMap[partner].filter((c: any) => c.txType === txType);
-
   do {
     const link = getTxUrl(address, q, baseUrlType);
 
-    console.log('api url:', link);
+    console.log('using link:', link);
 
     const txList = await getDataFromUrl(link);
 
@@ -94,104 +93,54 @@ const findSwap = async (address: string, partner: string, txType: string, baseUr
       q = '';
     }
 
-    for (const tx of txList.items) {
-      const isDateWithin = isWithin(tx.timestamp, start, end);
+    for (const c of contractMap[partner]) {
+      for (const tx of txList.items) {
 
-      if (!isDateWithin) { // No need to check further deep
-        return ret;
-      }
+        const isDateWithin = isWithin(tx.timestamp, start, end);
 
-      if (contractsList.find((c: any) => (c.method === tx.method)) && tx.status === 'ok') {
-        // verify method call
-        // verify contract address
-
-        console.log('method matched');
-        const hash = tx.hash || tx.transaction_hash;
-        const txDetailUrl = `https://rootstock.blockscout.com/api/v2/transactions/${hash}`;
-
-        const txData = await getDataFromUrl(txDetailUrl);
-
-        const foundContract = contractsList.find((c: any) => (txData && txData.to && txData.to.hash && c.contract.toLowerCase() === txData.to.hash.toLowerCase() && c.txType === txType && txData.method === c.method));
-
-        const translatedActionType: any = {
-          lend: ['token_minting'],
-          swap: ['swap']
-        };
-
-        if (foundContract && translatedActionType[txType].includes(foundContract.actionType)) {
-          // Yes, this address interacted with contract
-          console.log('contract address matched');
-          // Now find if user swapped the amount from query param;
-          if (txData.token_transfers) {
-            for (const transfer of txData.token_transfers) {
-              const tokenSymbol = transfer.token.symbol;
-              const value = Number(transfer.total.value) / (10 ** Number(transfer.total.decimals));
-
-              let exchangeRate = getExchangeRate(tokenSymbol); // consider it a dollar
-              if (transfer.token.exchange_rate) {
-                exchangeRate = transfer.token.exchange_rate
-              }
-
-              const inUSD = value * Number(exchangeRate);
-
-              const tokenAddress = transfer.token.address.toLowerCase();
-
-              let isTokenMatched = tokenMap[partner].includes(tokenAddress);
-
-              if (txType === 'lend') {
-                // isTokenMatched = true; // ignore token matching for lend for testing
-              }
-
-              if (inUSD >= amount && isTokenMatched) { // $50
-
-                console.log('tx: tx', txData.hash);
-                ret.partner = partner;
-                ret.isVerified = true;
-                ret.txType = txType;
-                ret.tokenName = tokenSymbol;
-                ret.tokenValue = value;
-                ret.tokenValueUSD = inUSD;
-                ret.exchangeRate = exchangeRate;
-                ret.matchedTx = txData.hash;
-
-                return ret;
-              }
-            }
-          } else {
-            // no token transfers - let's check tx event or summary
-
-            const txSummaryUrl = `https://rootstock.blockscout.com/api/v2/transactions/${hash}/summary`;
-
-            const txSummary = await getDataFromUrl(txSummaryUrl);
-            const classType = txSummary.data?.debug_data?.model_classification_type;
+        if (!isDateWithin) { // No need to check further deep
+          return ret; 
+        }
 
 
-            for (const summary of txSummary.data.summaries) {
-              let tokenMetadatas = [];
-              let tokenValues = [];
+        if ((tx.method === c.method || (lendMethods.includes(tx.method) && txType === 'lend')) && tx.status === 'ok') { // verify method call
+          // verify contract address
 
+          console.log('method matched');
+          const hash = tx.hash || tx.transaction_hash;
+          const txDetailUrl = `https://rootstock.blockscout.com/api/v2/transactions/${hash}`;
+          const txSummaryUrl = `https://rootstock.blockscout.com/api/v2/transactions/${hash}/summary`;
 
-              if (txType === 'swap' && classType === 'swap') {
-                tokenMetadatas.push(summary?.summary_template_variables?.outgoing_token?.value);
-                tokenValues.push(summary?.summary_template_variables?.outgoing_amount?.value);
+          const [txData, txSummary] = await Promise.all([
+            getDataFromUrl(txDetailUrl),
+            getDataFromUrl(txSummaryUrl)
+          ]);
 
-                tokenMetadatas.push(summary?.summary_template_variables?.incoming_token?.value);
-                tokenValues.push(summary?.summary_template_variables?.incoming_amount?.value);
-              } else {
-                // lend case 
-                tokenMetadatas.push(summary?.summary_template_variables?.token0?.value);
-                tokenValues.push(summary?.summary_template_variables?.amount0?.value);
-              }
+          console.log('txData:', txData);
+          if (txData && txData.to && txData.to.hash && c.contract.toLowerCase() === txData.to.hash.toLowerCase()) {
+            // Yes, this user interacted with this oku contract
 
-              let index = 0;
-              for (const tokenMetadata of tokenMetadatas) {
-                const tokenValue = tokenValues[index];
+            console.log('contract address matched');
+
+            // Now find if he swapped $50;
+
+            // using summeries
+            console.log('summaries len:', txSummary.data.summaries.length);
+            if (txType === 'swap') {
+              for (const summary of txSummary.data.summaries) {
+                const tokenMetadata = summary?.summary_template_variables?.outgoing_token?.value;
+                const tokenValue = summary?.summary_template_variables?.outgoing_amount?.value;
 
                 if (tokenMetadata && tokenValue) {
                   const tokenSymbol = tokenMetadata.symbol;
                   const value = Number(tokenValue);
 
-                  let exchangeRate = getExchangeRate(tokenSymbol); // consider it a dollar - USDT
+                  const tokenAddress = tokenMetadata.address.toLowerCase();
+
+                  const isTokenMatched = tokenMap[partner].includes(tokenAddress);
+
+
+                  let exchangeRate = 1; // consider it a dollar - USDT
                   if (tokenMetadata.exchange_rate) {
                     exchangeRate = tokenMetadata.exchange_rate
                   }
@@ -199,7 +148,7 @@ const findSwap = async (address: string, partner: string, txType: string, baseUr
                   const inUSD = value * Number(exchangeRate);
                   console.log('swap amount of: ', tokenSymbol, inUSD);
 
-                  if (inUSD >= amount) { // $50
+                  if (inUSD >= amount && isTokenMatched) { // $50
                     ret.partner = partner;
                     ret.isVerified = true;
                     ret.txType = txType;
@@ -211,9 +160,87 @@ const findSwap = async (address: string, partner: string, txType: string, baseUr
 
                     return ret;
                   }
+
                 }
 
-                index++;
+              }
+            } else if (txType === 'lend') {
+
+              const lendName = txSummary.data?.debug_data?.model_classification_type;
+
+              if (lendName && lendMethods.includes(lendName)) {
+                for (const summary of txSummary.data.summaries) {
+                  const tokenMetadata = summary?.summary_template_variables?.token0?.value;
+                  const tokenValue = summary?.summary_template_variables?.amount0?.value;
+
+                  if (tokenMetadata && tokenValue) {
+                    const tokenSymbol = tokenMetadata.symbol;
+                    const value = Number(tokenValue);
+
+                    let exchangeRate = 1; // consider it a dollar - USDT
+                    if (tokenMetadata.exchange_rate) {
+                      exchangeRate = tokenMetadata.exchange_rate
+                    }
+
+                    const inUSD = value * Number(exchangeRate);
+                    console.log('swap amount of: ', tokenSymbol, inUSD);
+
+                    if (inUSD >= amount) { // $50
+                      ret.partner = partner;
+                      ret.isVerified = true;
+                      ret.txType = txType;
+                      ret.tokenName = tokenSymbol;
+                      ret.tokenValue = value;
+                      ret.tokenValueUSD = inUSD;
+                      ret.exchangeRate = exchangeRate;
+                      ret.matchedTx = hash;
+
+                      return ret;
+                    }
+
+                  }
+                }
+              }
+
+            }
+
+            if (txSummary.data.summaries.length === 0) {
+
+              if (txData.token_transfers) {
+                for (const transfer of txData.token_transfers) {
+                  const tokenSymbol = transfer.token.symbol;
+                  const value = Number(transfer.total.value) / (10 ** Number(transfer.total.decimals));
+
+                  let exchangeRate = 1; // consider it a dollar - USDT
+                  if (transfer.token.exchange_rate) {
+                    exchangeRate = transfer.token.exchange_rate
+                  }
+
+                  const inUSD = value * Number(exchangeRate);
+
+                  const tokenAddress = transfer.token.address.toLowerCase();
+
+                  let isTokenMatched = tokenMap[partner].includes(tokenAddress);
+
+                  if (txType === 'lend') {
+                    isTokenMatched = true; // ignore token matching for lend for testing
+                  }
+
+                  if (inUSD >= amount && isTokenMatched) { // $50
+
+                    console.log('tx: tx', txData.hash);
+                    ret.partner = partner;
+                    ret.isVerified = true;
+                    ret.txType = txType;
+                    ret.tokenName = tokenSymbol;
+                    ret.tokenValue = value;
+                    ret.tokenValueUSD = inUSD;
+                    ret.exchangeRate = exchangeRate;
+                    ret.matchedTx = txData.hash;
+
+                    return ret;
+                  }
+                }
               }
             }
           }
@@ -285,7 +312,7 @@ export const GET = async (req: any, context: any) => {
   }
 
   let ret = await findSwap(address, partner, txType, 'token-transfers', amount, startDate, endDate);
-
+  
   if (!ret.isVerified) {
     ret = await findSwap(address, partner, txType, 'normal', amount, startDate, endDate);
   }
