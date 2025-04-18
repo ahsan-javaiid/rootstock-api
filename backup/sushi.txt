@@ -1,0 +1,23 @@
+Double check sushi it has more edge case and contract integration like lifi jumper
+sushi check both lending and swaps 
+
+
+check this tx: https://rootstock.blockscout.com/tx/0xce3e0ac2d91b86a12a7e5a254c1a5c4df8b0fcf1cc5185994323e29ce01345f3 
+
+
+ETHs/RBTC  0.05% lend swap done 
+RBTC/rUSDT 0.05% lend swap done 
+DOC/rUSDT  0.05% lend swap done 
+RIF/RBTC   0.03% lend swap done 
+RIF/rUSDT lend swap done
+RBTC/MOC lend swap done 
+RIF/rUSDT lend swap done 
+RBTC/rUSDT lend swap done
+RBTC/rUSDT lend swap done 
+RBTC/DOC done
+DOC/rUSDT done 
+
+
+
+
+

@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server";
-import cors from '../../../../../lib/cors';
 import { oku, okuTokens } from "@/app/lib/partners/oku";
 import { sushi, sushiTokens } from "@/app/lib/partners/sushi";
 import { woodswap, woodTokens } from "@/app/lib/partners/woodswap";
@@ -103,7 +102,7 @@ const findSwap = async (address: string, partner: string, txType: string, baseUr
         }
 
 
-        if ((tx.method === c.method || (lendMethods.includes(tx.method) && txType === 'lend')) && tx.status === 'ok') { // verify method call
+        if ((tx.method === c.method) && tx.status === 'ok') { // verify method call
           // verify contract address
 
           console.log('method matched');
@@ -168,7 +167,7 @@ const findSwap = async (address: string, partner: string, txType: string, baseUr
 
               const lendName = txSummary.data?.debug_data?.model_classification_type;
 
-              if (lendName && lendMethods.includes(lendName)) {
+              if (lendName) {
                 for (const summary of txSummary.data.summaries) {
                   const tokenMetadata = summary?.summary_template_variables?.token0?.value;
                   const tokenValue = summary?.summary_template_variables?.amount0?.value;
@@ -323,10 +322,4 @@ export const GET = async (req: any, context: any) => {
 }
 
 export async function OPTIONS(request: Request) {
-  return cors(
-    request,
-    new Response(null, {
-      status: 204,
-    })
-  );
 }

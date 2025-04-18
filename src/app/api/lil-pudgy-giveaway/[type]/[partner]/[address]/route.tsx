@@ -63,6 +63,68 @@ const tokenMap: any = {
   woodswap: woodTokens.map(e => e.toLowerCase()),
 };
 
+const checkTxSummary = async (hash: string, txType: string, amount: number, partner: string, ret: any) => {
+  
+  const txSummaryUrl = `https://rootstock.blockscout.com/api/v2/transactions/${hash}/summary`;
+
+  console.log('checking summary: ', txSummaryUrl);
+  const txSummary = await getDataFromUrl(txSummaryUrl);
+  const classType = txSummary.data?.debug_data?.model_classification_type;
+
+
+  for (const summary of txSummary.data.summaries) {
+    let tokenMetadatas = [];
+    let tokenValues = [];
+
+    if (txType === 'swap' && classType === 'swap') {
+      tokenMetadatas.push(summary?.summary_template_variables?.outgoing_token?.value);
+      tokenValues.push(summary?.summary_template_variables?.outgoing_amount?.value);
+
+      tokenMetadatas.push(summary?.summary_template_variables?.incoming_token?.value);
+      tokenValues.push(summary?.summary_template_variables?.incoming_amount?.value);
+    } else {
+      // lend case 
+      tokenMetadatas.push(summary?.summary_template_variables?.token0?.value);
+      tokenValues.push(summary?.summary_template_variables?.amount0?.value);
+    }
+
+    let index = 0;
+    for (const tokenMetadata of tokenMetadatas) {
+      const tokenValue = tokenValues[index];
+
+      if (tokenMetadata && tokenValue) {
+        const tokenSymbol = tokenMetadata.symbol;
+        const value = Number(tokenValue);
+
+        let exchangeRate = getExchangeRate(tokenSymbol); // consider it a dollar - USDT
+        if (tokenMetadata.exchange_rate) {
+          exchangeRate = tokenMetadata.exchange_rate
+        }
+
+        const inUSD = value * Number(exchangeRate);
+        console.log('swap amount of: ', tokenSymbol, inUSD);
+
+        if (inUSD >= amount) { // $50
+          ret.partner = partner;
+          ret.isVerified = true;
+          ret.txType = txType;
+          ret.tokenName = tokenSymbol;
+          ret.tokenValue = value;
+          ret.tokenValueUSD = inUSD;
+          ret.exchangeRate = exchangeRate;
+          ret.matchedTx = hash;
+
+          return ret;
+        }
+      }
+
+      index++;
+    }
+  }
+
+  return ret; 
+}
+
 const findSwap = async (address: string, partner: string, txType: string, baseUrlType: string, amount: number, start: string, end: string | null | undefined) => {
 
   const ret = {
@@ -107,6 +169,7 @@ const findSwap = async (address: string, partner: string, txType: string, baseUr
 
         console.log('method matched');
         const hash = tx.hash || tx.transaction_hash;
+        console.log('hash: ', hash);
         const txDetailUrl = `https://rootstock.blockscout.com/api/v2/transactions/${hash}`;
 
         const txData = await getDataFromUrl(txDetailUrl);
@@ -114,8 +177,8 @@ const findSwap = async (address: string, partner: string, txType: string, baseUr
         const foundContract = contractsList.find((c: any) => (txData && txData.to && txData.to.hash && c.contract.toLowerCase() === txData.to.hash.toLowerCase() && c.txType === txType && txData.method === c.method));
 
         const translatedActionType: any = {
-          lend: ['token_minting'],
-          swap: ['swap']
+          lend: ['token_minting', 'token_transfer', 'collect', 'mint', 'swap', 'mint', 'addLiquidity', 'addLiquidityETH', 'collect', 'supply', 'borrow', 'multicall'],
+          swap: ['swap', 'collect']
         };
 
         if (foundContract && translatedActionType[txType].includes(foundContract.actionType)) {
@@ -157,65 +220,16 @@ const findSwap = async (address: string, partner: string, txType: string, baseUr
                 return ret;
               }
             }
+            console.log('lets check summary');
+            // not found in token transfer - then also check summary 
+            await checkTxSummary(hash, txType, amount, partner, ret);
+
+            if (ret.isVerified) return ret; 
           } else {
             // no token transfers - let's check tx event or summary
+            await checkTxSummary(hash, txType, amount, partner, ret);
 
-            const txSummaryUrl = `https://rootstock.blockscout.com/api/v2/transactions/${hash}/summary`;
-
-            const txSummary = await getDataFromUrl(txSummaryUrl);
-            const classType = txSummary.data?.debug_data?.model_classification_type;
-
-
-            for (const summary of txSummary.data.summaries) {
-              let tokenMetadatas = [];
-              let tokenValues = [];
-
-
-              if (txType === 'swap' && classType === 'swap') {
-                tokenMetadatas.push(summary?.summary_template_variables?.outgoing_token?.value);
-                tokenValues.push(summary?.summary_template_variables?.outgoing_amount?.value);
-
-                tokenMetadatas.push(summary?.summary_template_variables?.incoming_token?.value);
-                tokenValues.push(summary?.summary_template_variables?.incoming_amount?.value);
-              } else {
-                // lend case 
-                tokenMetadatas.push(summary?.summary_template_variables?.token0?.value);
-                tokenValues.push(summary?.summary_template_variables?.amount0?.value);
-              }
-
-              let index = 0;
-              for (const tokenMetadata of tokenMetadatas) {
-                const tokenValue = tokenValues[index];
-
-                if (tokenMetadata && tokenValue) {
-                  const tokenSymbol = tokenMetadata.symbol;
-                  const value = Number(tokenValue);
-
-                  let exchangeRate = getExchangeRate(tokenSymbol); // consider it a dollar - USDT
-                  if (tokenMetadata.exchange_rate) {
-                    exchangeRate = tokenMetadata.exchange_rate
-                  }
-
-                  const inUSD = value * Number(exchangeRate);
-                  console.log('swap amount of: ', tokenSymbol, inUSD);
-
-                  if (inUSD >= amount) { // $50
-                    ret.partner = partner;
-                    ret.isVerified = true;
-                    ret.txType = txType;
-                    ret.tokenName = tokenSymbol;
-                    ret.tokenValue = value;
-                    ret.tokenValueUSD = inUSD;
-                    ret.exchangeRate = exchangeRate;
-                    ret.matchedTx = hash;
-
-                    return ret;
-                  }
-                }
-
-                index++;
-              }
-            }
+            if (ret.isVerified) return ret; 
           }
         }
       }
