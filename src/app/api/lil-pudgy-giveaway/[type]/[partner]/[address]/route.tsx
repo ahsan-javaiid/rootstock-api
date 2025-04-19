@@ -177,7 +177,7 @@ const findSwap = async (address: string, partner: string, txType: string, baseUr
         const foundContract = contractsList.find((c: any) => (txData && txData.to && txData.to.hash && c.contract.toLowerCase() === txData.to.hash.toLowerCase() && c.txType === txType && txData.method === c.method));
 
         const translatedActionType: any = {
-          lend: ['token_minting', 'token_transfer', 'collect', 'mint', 'swap', 'mint', 'addLiquidity', 'addLiquidityETH', 'collect', 'supply', 'borrow', 'multicall'],
+          lend: ['token_minting', 'token_transfer', 'collect', 'mint', 'swap', 'mint', 'addLiquidity', 'addLiquidityETH', 'collect', 'supply', 'borrow', 'multicall', 'deposit', 'transfer'],
           swap: ['swap', 'collect']
         };
 
