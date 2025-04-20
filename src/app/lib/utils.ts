@@ -31,7 +31,16 @@ export const isDateValid = (date: string) => {
 
 export const getExchangeRate = (symbol: string) => {
   const supported: any = {
-    'ETHs': 1585.91
+    'ETHs': 1578.52,
+    'lRBTC': 83794,
+    'RBTC': 83794,
+    'lRIF': 0.04279797,
+    'lUSDCe': 1,
+    'lUSDT': 1,
+    'lWETH': 1578.52,
+    'RIF': 0.04340247,
+    'WETH': 1578.52,
+    'USDC.e': 1
   }
 
   if (supported[symbol]) {

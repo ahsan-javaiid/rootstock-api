@@ -10,3 +10,6 @@ let see this one
  8. done 
  9. done 
  10. 
+
+
+missing pool https://oku.trade/info/rootstock/pool/0x75428e9e16bdb8574a9e4bfddec8ff299f2269cf
