@@ -54,13 +54,20 @@ export const woodswap = [
   method: 'mint', //https://rootstock.blockscout.com/tx/0x73ba3e162e022926b98b0f320b637c1ae78d4938cfdf82105a5244c20e3af210
   txType: 'lend', // add liquidity / mint ,
   actionType: 'token_minting' //  "type": "token_minting"
-}
-]
+},
+{
+  contract: '0x19B683A2f45012318d9b2Ae1280D68d3eC54d663',
+  name: 'Woodswap liquidity NFT',
+  method: '0x96f639ed', //https://rootstock.blockscout.com/tx/0x73ba3e162e022926b98b0f320b637c1ae78d4938cfdf82105a5244c20e3af210
+  txType: 'lend', // add liquidity / mint ,
+  actionType: 'token_minting' //  "type": "token_minting"
+}]
 
 export const woodTokens = [
   '0x542fda317318ebf1d3deaf76e0b632741a7e677d',
   '0x1d931bf8656d795e50ef6d639562c5bd8ac2b78f',
   '0x74c9f2b00581f1b11aa7ff05aa9f608b7389de67',
   '0xaf368c91793cb22739386dfcbbb2f1a9e4bcbebf',
-  '0xef213441A85dF4d7ACbDaE0Cf78004e1E486bB96'
+  '0xef213441A85dF4d7ACbDaE0Cf78004e1E486bB96',
+  '0xEf213441a85DF4d7acBdAe0Cf78004E1e486BB96'
 ];
