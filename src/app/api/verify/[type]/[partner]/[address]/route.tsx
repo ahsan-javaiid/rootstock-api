@@ -5,7 +5,7 @@ import { sushi, sushiTokens } from "@/app/lib/partners/sushi";
 import { woodswap, woodTokens } from "@/app/lib/partners/woodswap";
 import { layerbank, layerBankTokens } from "@/app/lib/partners/layerbank";
 import { stargate, stargateTokens } from "@/app/lib/partners/stargate";
-import { isWithin, isAmountValid, isDateValid, getExchangeRate } from "@/app/lib/utils";
+import { isWithin, isAmountValid, isDateValid, getExchangeRate, telemetry } from "@/app/lib/utils";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -321,11 +321,22 @@ export const GET = async (req: any, context: any) => {
     if (!ret.isVerified) {
       ret = await findSwap(address, partner, txType, 'normal', amount, startDate, endDate);
     }
+
+    await telemetry({
+      address,
+      amount,
+      startDate,
+      ...ret
+    });
   
     return NextResponse.json({
       data: ret
     }, { status: 200, headers: corsHeaders });
   } catch (e) {
+    await telemetry({
+      message: 'blockscout error',
+      error: e
+    });
     return NextResponse.json({
       data: {
         msg: 'api error',

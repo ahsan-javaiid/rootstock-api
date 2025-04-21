@@ -49,3 +49,35 @@ export const getExchangeRate = (symbol: string) => {
 
   return 1; 
 }
+
+export const telemetry = async (json: any) => {
+  const token = process.env.telemetry;
+  const envname = process.env.envname;
+
+  if (token && envname === 'prod') {
+    try {
+      const resp = await fetch('https://s1280654.eu-nbg-2.betterstackdata.com', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+        body: JSON.stringify({ message: json, timestamp: new Date().toISOString() })
+      });
+  
+      if (!resp.ok) {
+        // Handle HTTP errors (non-2xx)
+        const error = await resp.text();
+        console.error('Error sending telemetry:', resp.statusText, error);
+
+        return error;
+      }
+      
+      const result = await resp.text();
+      console.log('Telemetry:', result);
+
+      return result;
+    } catch (e) {
+      console.log(e);
+    }
+  }
+}
