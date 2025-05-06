@@ -391,6 +391,13 @@ export const sushi = [
     method: 'harvest',
     txType: 'lend',
     actionType: 'collect'
+  },
+  {
+    contract: '0x37cff062D52dD6e9E39DF619cCD30C037A36BB83',
+    name: '',
+    method: 'deposit',
+    txType: 'lend',
+    actionType: 'deposit'
   }
 ];
 

@@ -81,3 +81,9 @@ export const telemetry = async (json: any) => {
     }
   }
 }
+
+export function getDatePast24Hours() {
+  const now = new Date();
+  const pastDate = new Date(now.getTime() - 24 * 60 * 60 * 1000); // 24 hours in milliseconds
+  return pastDate;
+}
