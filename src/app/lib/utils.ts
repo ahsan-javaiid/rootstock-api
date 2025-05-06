@@ -87,3 +87,22 @@ export function getDatePast24Hours() {
   const pastDate = new Date(now.getTime() - 24 * 60 * 60 * 1000); // 24 hours in milliseconds
   return pastDate;
 }
+
+export function getHoursDifference(p1: string, p2: string) {
+  const date1 = new Date(p1);
+  date1.setHours(0, 0, 0, 0);
+
+  const date2 = new Date(p2);
+
+  const diffInMs =date2.getTime() - date1.getTime(); // Difference in milliseconds
+  const diffInHours = diffInMs / (1000 * 60 * 60); // Convert ms to hours
+  return diffInHours;
+}
+
+export function getPreviousDate(date: string) {
+  const date1 = new Date(date);
+  date1.setHours(0, 0, 0, 0);
+  
+  date1.setDate(date1.getDate() - 1);
+  return date1;
+}
