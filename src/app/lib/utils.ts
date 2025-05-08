@@ -102,7 +102,17 @@ export function getHoursDifference(p1: string, p2: string) {
 export function getPreviousDate(date: string) {
   const date1 = new Date(date);
   date1.setHours(0, 0, 0, 0);
-  
+
   date1.setDate(date1.getDate() - 1);
   return date1;
+}
+
+export function getDaysDiff(date1: Date, date2: Date) {
+
+  date1.setHours(0, 0, 0, 0);
+  const diffTime = Math.abs(date1.getTime() - date2.getTime()); // difference in milliseconds
+  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); // convert to days
+
+  console.log(`Difference is ${diffDays} days`);
+  return diffDays;
 }
