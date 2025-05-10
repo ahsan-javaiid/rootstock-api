@@ -45,7 +45,7 @@ async function findClosestBlock(provider: any, targetTimestamp: number, startBlo
 const CAMPAIGN_DAYS = 15;
 const ENTRIES_PER_100 = 1;
 const MAX_ENTRIES = 60;
-const BLOCK_TIME_SECONDS = 30; // Approximate for Rootstock
+const BLOCK_TIME_SECONDS = 25; // Approximate for Rootstock
 
 /**
  * Calculates total entries earned during a 15-day campaign.
@@ -113,13 +113,14 @@ async function calculateEntries(account: string, startDate: string, endDate: str
 
   const isWindow = isWithin(windowStart.toISOString(), startDate, endDate);
 
-  if (!isWindow) {
-    return {
-      msg: 'Balance & tickets calculation does not apply on campaign future start date or after campaign end date. Users need to claim tickets every 24h after campaing start. Secondly, wait atleast 24h after campaign start to claim first entry to ensure the sustainable stRIF holding.',
-      balance: 0,
-      tickets: 0
-    }
-  }
+  // Make this condition light 
+  // if (!isWindow) {
+  //   return {
+  //     msg: 'Balance & tickets calculation does not apply on campaign future start date or after campaign end date. Users need to claim tickets every 24h after campaing start. Secondly, wait atleast 24h after campaign start to claim first entry to ensure the sustainable stRIF holding.',
+  //     balance: 0,
+  //     tickets: 0
+  //   }
+  // }
 
   const [currentBlock, currentBalance] = await Promise.all([
     rskProvider.getBlock("latest"),
