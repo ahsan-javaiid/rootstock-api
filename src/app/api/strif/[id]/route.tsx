@@ -4,7 +4,7 @@ import { providers, utils, Contract } from 'ethers';
 import cors from '../../../lib/cors';
 import { abi } from '../../../lib/abi';
 import { ethers } from "ethers";
-import {getDatePast24Hours, getDaysDiff, getHoursDifference, getPreviousDate, isWithin, isAmountValid, isDateValid, getExchangeRate, telemetry } from "@/app/lib/utils";
+import {getDatePast24Hours, getDaysDiff, logger ,getHoursDifference, getPreviousDate, isWithin, isAmountValid, isDateValid, getExchangeRate, telemetry } from "@/app/lib/utils";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -174,34 +174,40 @@ export const GET = async (req: any, context: any) => {
     }, { status: 200, headers: corsHeaders });
   }
 
+  let resp = {};
   if (showHistory && showHistory === 'true') {
     const [result, history] = await Promise.all([
       calculateEntries(params.id.toLowerCase(), startDate, endDate),
       calculateCampaignEntries(params.id.toLowerCase(), startDate)
     ]);
-  
-  
-    return NextResponse.json({
-      data: {
-        ...result,
-        network: 'mainnet',
-        token: 'stRIF',
-        holdingDuration: '24h',
-        holdingHistory: history
-      }
-    }, { status: 200, headers: corsHeaders });
+
+    resp = {
+      ...result,
+      network: 'mainnet',
+      token: 'stRIF',
+      holdingDuration: '24h',
+      holdingHistory: history
+    };
   } else {
     const result = await calculateEntries(params.id.toLowerCase(), startDate, endDate);
 
-    return NextResponse.json({
-      data: {
-        ...result,
-        network: 'mainnet',
-        token: 'stRIF',
-        holdingDuration: '24h',
-      }
-    }, { status: 200, headers: corsHeaders });
+    resp = {
+      ...result,
+      network: 'mainnet',
+      token: 'stRIF',
+      holdingDuration: '24h',
+    };
   }
+
+  await logger('strif', {
+    id: params.id.toLowerCase(),
+    ...resp
+  });
+
+  return NextResponse.json({
+    data:  resp
+  }, { status: 200, headers: corsHeaders });
+
 }
 
 export async function OPTIONS(request: Request) {

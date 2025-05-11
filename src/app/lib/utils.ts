@@ -82,6 +82,39 @@ export const telemetry = async (json: any) => {
   }
 }
 
+export const logger = async (type: string, json: any) => {
+  const token = process.env.logger;
+  const envname = process.env.envname;
+
+  if (token && envname === 'prod') {
+    try {
+      const resp = await fetch(`https://${process.env.uri}/api/${type}?key=${token}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+        body: JSON.stringify({ ...json, timestamp: new Date().toISOString() })
+      });
+  
+      if (!resp.ok) {
+        // Handle HTTP errors (non-2xx)
+        const error = await resp.text();
+        console.error('Error sending logger:', resp.statusText, error);
+
+        return error;
+      }
+      
+      const result = await resp.text();
+      console.log('Logger response:', result);
+
+      return result;
+    } catch (e) {
+      console.log(e);
+      return e; 
+    }
+  }
+}
+
 export function getDatePast24Hours() {
   const now = new Date();
   const pastDate = new Date(now.getTime() - 24 * 60 * 60 * 1000); // 24 hours in milliseconds
