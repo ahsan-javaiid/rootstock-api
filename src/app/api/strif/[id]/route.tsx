@@ -107,6 +107,106 @@ async function calculateCampaignEntries(account: string, startDate: string) {
   return history;
 }
 
+const getDataFromUrl = async (link: string) => {
+  try {
+    const response = await fetch(link);
+    if (response.ok && response.status === 200) {
+      const data = await response.json();
+
+      return Promise.resolve(data);
+
+    } else {
+      console.log('error:', response.statusText);
+      return Promise.reject(response.statusText);
+    }
+  } catch (e) {
+    console.log('error:', e);
+    return Promise.reject(e);
+  }
+}
+
+function objectToQueryParams(obj: any) {
+  return Object.entries(obj)
+    .map(([key, value]) =>
+      encodeURIComponent(key) + '=' + encodeURIComponent(value as string)
+    )
+    .join('&');
+}
+
+async function calculateEntriesViaBlockscout(account: string, startDate: string, endDate: string) { 
+  // https://rootstock.blockscout.com/api/v2/addresses/0x1723e4d5daAc7D6761941237d9a70b200424AF41/token-transfers?type=ERC-20&filter=to&token=0x5db91e24BD32059584bbDb831A901f1199f3d459
+  try {
+    const ret = {
+      isVerified: false,
+      balance: 0,
+      tickets: 0,
+      network: 'mainnet',
+      token: "stRIF",
+      holdingDuration: "24h"
+    };
+  
+    let maxPagesTocheck = 10;
+    let q = '';
+
+    do {
+
+      const link = `https://rootstock.blockscout.com/api/v2/addresses/${account}/token-transfers?type=ERC-20&filter=to&token=0x5db91e24BD32059584bbDb831A901f1199f3d459`
+      console.log('api url:', link);
+  
+      const txList = await getDataFromUrl(link);
+  
+      if (txList.next_page_params) {
+        q = objectToQueryParams(txList.next_page_params);
+      } else {
+        q = '';
+      }
+  
+      for (const tx of txList.items) {
+        const isDateWithin = isWithin(tx.timestamp, startDate, endDate);
+  
+        if (!isDateWithin) { // No need to check further deep
+          return ret;
+        }
+  
+        // if (contractsList.find((c: any) => (c.method === tx.method))) {
+        if (['depositAndDelegate'].includes(tx.method)) {
+          // verify method call
+          // verify contract address
+          // tx.status === 'ok'
+          console.log('method matched');
+          const hash = tx.hash || tx.transaction_hash;
+          console.log('hash: ', hash);
+          const txDetailUrl = `https://rootstock.blockscout.com/api/v2/transactions/${hash}`;
+  
+          const txData = await getDataFromUrl(txDetailUrl);
+  
+  
+          if (txData.status === 'ok') {
+            const amount = tx.total.value / 10 ** 18;
+            return {
+              isVerified: true,
+              balance: amount,
+              tickets: Math.min(Math.floor(amount / 100), 4),
+              network: 'mainnet',
+              token: "stRIF",
+              holdingDuration: "24h"
+            };
+
+          }
+        }
+      }
+  
+      maxPagesTocheck--;
+    } while (maxPagesTocheck >= 0 && q != '');
+  
+    return ret;
+  } catch (e) {
+    console.log('error calling blockscout api: ', e);
+    throw e;
+  }
+
+
+}
 
 async function calculateEntries(account: string, startDate: string, endDate: string) { // campaign start date
   let windowStart = getDatePast24Hours();
@@ -189,8 +289,9 @@ export const GET = async (req: any, context: any) => {
       holdingHistory: history
     };
   } else {
-    const result = await calculateEntries(params.id.toLowerCase(), startDate, endDate);
+    //const result = await calculateEntries(params.id.toLowerCase(), startDate, endDate);
 
+    const result = await calculateEntriesViaBlockscout(params.id.toLowerCase(), startDate, endDate);
     resp = {
       ...result,
       network: 'mainnet',
