@@ -134,7 +134,7 @@ const checkTxSummary = async (hash: string, txType: string, amount: number, part
   }
 }
 
-const findSwap = async (address: string, partner: string, txType: string, baseUrlType: string, amount: number, start: string, end: string | null | undefined) => {
+const findSwap = async (address: string, partner: string, txType: string, baseUrlType: string, amount: number, start: string, end: string | null | undefined, matchToken: string | undefined | null) => {
   try {
     const ret = {
       partner: partner,
@@ -212,7 +212,13 @@ const findSwap = async (address: string, partner: string, txType: string, baseUr
   
                 const tokenAddress = transfer.token.address.toLowerCase();
   
-                let isTokenMatched = tokenMap[partner].includes(tokenAddress);
+                let isTokenMatched = false;
+
+                if (matchToken) {
+                  isTokenMatched = matchToken.toLowerCase() === tokenAddress;
+                } else {
+                  isTokenMatched = tokenMap[partner].includes(tokenAddress);
+                }
   
                 if (txType === 'lend') {
                   // isTokenMatched = true; // ignore token matching for lend for testing
@@ -270,6 +276,7 @@ export const GET = async (req: any, context: any) => {
   const endDate = searchParams.get('endDate');
   const amount = searchParams.get('amount');
 
+  const token = searchParams.get('token');
 
   if (!amount) {
     return NextResponse.json({
@@ -316,10 +323,10 @@ export const GET = async (req: any, context: any) => {
   }
 
   try {
-    let ret = await findSwap(address, partner, txType, 'token-transfers', amount, startDate, endDate);
+    let ret = await findSwap(address, partner, txType, 'token-transfers', amount, startDate, endDate, token);
 
     if (!ret.isVerified) {
-      ret = await findSwap(address, partner, txType, 'normal', amount, startDate, endDate);
+      ret = await findSwap(address, partner, txType, 'normal', amount, startDate, endDate, token);
     }
 
     await telemetry({

@@ -69,5 +69,7 @@ export const woodTokens = [
   '0x74c9f2b00581f1b11aa7ff05aa9f608b7389de67',
   '0xaf368c91793cb22739386dfcbbb2f1a9e4bcbebf',
   '0xef213441A85dF4d7ACbDaE0Cf78004e1E486bB96',
-  '0xEf213441a85DF4d7acBdAe0Cf78004E1e486BB96'
+  '0xEf213441a85DF4d7acBdAe0Cf78004E1e486BB96',
+  '0x541fd749419ca806a8bc7da8ac23d346f2df8b77', //solvbtc
+  '0xcc0966d8418d412c599a6421b760a847eb169a8c' //xsolvbtc
 ];
