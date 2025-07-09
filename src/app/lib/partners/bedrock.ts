@@ -1,21 +1,17 @@
-export const layerbank = [
+
+// https://app.bedrock.technology/
+
+export const bedrock = [
   {
-    contract: '0xc30991623fb2a63E6e1B59A29987E1EEE57447bF',
-    name: 'core',
-    method: 'supply',
+    contract: '0x3376eBCa0A85fC8d791b1001A571c41FDd61514A',
+    name: 'vault',
+    method: 'mint',
     txType: 'lend',
     actionType: 'mint'
-  },
-  {
-    contract: '0xc30991623fb2a63E6e1B59A29987E1EEE57447bF',
-    name: 'core',
-    method: 'borrow',
-    txType: 'borrow',
-    actionType: 'borrow'
   }
 ];
 
-export const layerBankTokens = [
+export const bedrockTokens = [
   '0x542fda317318ebf1d3deaf76e0b632741a7e677d',
   '0x1d931bf8656d795e50ef6d639562c5bd8ac2b78f',
   '0x74c9f2b00581f1b11aa7ff05aa9f608b7389de67',
@@ -30,7 +26,6 @@ export const layerBankTokens = [
   '0x74c9f2b00581F1B11AA7ff05aa9F608B7389De67', // stargate usdce
   '0xAf368c91793CB22739386DFCbBb2F1A9e4bCBeBf', // usdt
   '0x2F6F07CDcf3588944Bf4C42aC74ff24bF56e7590', //weth
-  '0x779Ded0c9e1022225f8E0630b35a9b54bE713736', // usdt0
-  '0x2AcC95758f8b5F583470ba265EB685a8F45fC9D5' // rif
-
+  '0x2AcC95758f8b5F583470ba265EB685a8F45fC9D5', // rif,
+  '0xd3c8da379d71a33bfee8875F87ac2748beb1d58d', //unibtc
 ];

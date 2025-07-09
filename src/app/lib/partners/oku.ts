@@ -390,5 +390,7 @@ export const okuTokens = [
   '0xaf368c91793cb22739386dfcbbb2f1a9e4bcbebf',
   '0xef213441A85dF4d7ACbDaE0Cf78004e1E486bB96',
   '0x541fd749419ca806a8bc7da8ac23d346f2df8b77', //solvbtc
-  '0xcc0966d8418d412c599a6421b760a847eb169a8c' //xsolvbtc
+  '0xcc0966d8418d412c599a6421b760a847eb169a8c', //xsolvbtc
+  '0x2acc95758f8b5f583470ba265eb685a8f45fc9d5', // rif
+  '0x779Ded0c9e1022225f8E0630b35a9b54bE713736', // usdt0
 ];

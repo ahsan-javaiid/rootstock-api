@@ -5,7 +5,8 @@ import { sushi, sushiTokens } from "@/app/lib/partners/sushi";
 import { woodswap, woodTokens } from "@/app/lib/partners/woodswap";
 import { layerbank, layerBankTokens } from "@/app/lib/partners/layerbank";
 import { stargate, stargateTokens } from "@/app/lib/partners/stargate";
-import { isWithin, isAmountValid, isDateValid, getExchangeRate, telemetry } from "@/app/lib/utils";
+import { bedrock, bedrockTokens } from "@/app/lib/partners/bedrock";
+import { isWithin, isAmountValid, isDateValid, getExchangeRate, logger } from "@/app/lib/utils";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -59,7 +60,8 @@ const contractMap: any = {
   sushi: sushi,
   woodswap: woodswap,
   layerbank: layerbank,
-  stargate: stargate
+  stargate: stargate,
+  bedrock: bedrock
 };
 const tokenMap: any = {
   oku: okuTokens.map(e => e.toLowerCase()),
@@ -67,6 +69,7 @@ const tokenMap: any = {
   woodswap: woodTokens.map(e => e.toLowerCase()),
   layerbank: layerBankTokens.map(e => e.toLowerCase()),
   stargate: stargateTokens.map(e => e.toLowerCase()),
+  bedrock: bedrockTokens.map(e => e.toLowerCase()),
 };
 
 const checkTxSummary = async (hash: string, txType: string, amount: number, partner: string, ret: any) => {
@@ -310,7 +313,7 @@ export const GET = async (req: any, context: any) => {
     }, { status: 200, headers: corsHeaders });
   }
 
-  if (!['oku', 'woodswap', 'sushi', 'layerbank', 'stargate'].includes(partner)) {
+  if (!['oku', 'woodswap', 'sushi', 'layerbank', 'stargate', 'bedrock'].includes(partner)) {
     return NextResponse.json({
       msg: 'Invalid partner!'
     }, { status: 200, headers: corsHeaders });
@@ -329,21 +332,19 @@ export const GET = async (req: any, context: any) => {
       ret = await findSwap(address, partner, txType, 'normal', amount, startDate, endDate, token);
     }
 
-    await telemetry({
-      address,
-      amount,
-      startDate,
-      ...ret
+    await logger('verify', {
+        id: `${address}-${new Date().getTime()}`,
+        date: new Date().toISOString(),
+        address,
+        amount,
+        startDate,
+        ...ret
     });
   
     return NextResponse.json({
       data: ret
     }, { status: 200, headers: corsHeaders });
   } catch (e) {
-    await telemetry({
-      message: 'blockscout error',
-      error: e
-    });
     return NextResponse.json({
       data: {
         msg: 'api error',
